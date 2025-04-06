@@ -1,44 +1,40 @@
 'use strict';
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Strangers', {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable('categories', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      userId: {
+      relationship_type_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Users',
+          model: 'relationship_types',
           key: 'id'
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
-      foundOn: {
+      label: {
         type: Sequelize.STRING,
         allowNull: false
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
         type: Sequelize.DATE
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
-        type: Sequelize.DATE
-      },
-      deleted_at: {
         type: Sequelize.DATE
       }
     });
   },
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Strangers');
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.dropTable('categories');
   }
 }; 

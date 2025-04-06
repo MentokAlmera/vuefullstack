@@ -1,21 +1,24 @@
+'use strict';
+
 import fs from 'fs';
 import path from 'path';
-import { Sequelize } from 'sequelize';
 import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import Sequelize from 'sequelize';
 import process from 'process';
-import configData from '../config/config.js';
-import UserModel from './user.js';
-import FriendModel from './friend.js';
-import FamilyModel from './family.js';
-import StrangerModel from './stranger.js';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+const __dirname = dirname(__filename);
+const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const config = configData[env];
-
+const config = (await import('../config/config.js')).default[env];
 const db = {};
+
+// Import models
+import userModel from './user.js';
+import relationshipTypeModel from './relationship_type.js';
+import categoryModel from './category.js';
+import commentModel from './comment.js';
 
 const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USERNAME, process.env.DB_PASSWORD, {
     host: process.env.DB_HOST,
@@ -23,16 +26,10 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USERNAME, pr
 });
 
 // Initialize models
-const User = UserModel(sequelize);
-const Friend = FriendModel(sequelize);
-const family = FamilyModel(sequelize);
-const Stranger = StrangerModel(sequelize);
-
-// Add models to db object
-db.User = User;
-db.Friend = Friend;
-db.family = family;
-db.Stranger = Stranger;
+db.User = userModel(sequelize, Sequelize.DataTypes);
+db.RelationshipType = relationshipTypeModel(sequelize, Sequelize.DataTypes);
+db.Category = categoryModel(sequelize, Sequelize.DataTypes);
+db.Comment = commentModel(sequelize, Sequelize.DataTypes);
 
 // Set up associations
 Object.keys(db).forEach(modelName => {

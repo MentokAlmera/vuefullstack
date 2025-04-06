@@ -1,55 +1,115 @@
 <template>
+    <!-- Loading Overlay -->
+    <div v-if="isLoading" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Confirm Deletion</h3>
+            <p>Are you sure you want to delete this comment? This action cannot be undone.</p>
+            <div class="modal-buttons">
+                <button @click="confirmDelete" class="btn btn-danger">Delete</button>
+                <button @click="cancelDelete" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <navComponent />
     <main class="container bg-white p-4 rounded shadow-lg mt-5">
         <h1 class="text-center text-danger mt-3 mb-4">Comments</h1>
 
-        <!-- Add Comment Form - Now static -->
+        <!-- Add this after the navComponent -->
+        <div v-if="showErrorAlert" class="alert alert-danger alert-dismissible fade show mx-4 mt-4" role="alert">
+            <strong>Error!</strong> {{ errorMessage }}
+            <button type="button" class="btn-close" @click="showErrorAlert = false"></button>
+        </div>
+
+        <!-- Add Comment Form -->
         <div class="sticky-form bg-white p-4 shadow-sm rounded">
             <form @submit.prevent="saveComment" class="row g-3">
                 <div class="col-md-5">
                     <label class="form-label fw-bold">First Name</label>
-                    <input v-model="firstName" type="text" class="form-control" required />
+                    <input 
+                        v-model="firstName" 
+                        type="text" 
+                        class="form-control" 
+                        :class="{ 'is-invalid': touchedFields.firstName && !isValidFirstName }"
+                        @blur="touchField('firstName')"
+                        required 
+                    />
+                    <div class="invalid-feedback" v-if="touchedFields.firstName && !isValidFirstName">
+                        First name must be between 2 and 50 characters
+                    </div>
                 </div>
                 <div class="col-md-5">
                     <label class="form-label fw-bold">Last Name</label>
-                    <input v-model="lastName" type="text" class="form-control" required />
+                    <input 
+                        v-model="lastName" 
+                        type="text" 
+                        class="form-control" 
+                        :class="{ 'is-invalid': touchedFields.lastName && !isValidLastName }"
+                        @blur="touchField('lastName')"
+                        required 
+                    />
+                    <div class="invalid-feedback" v-if="touchedFields.lastName && !isValidLastName">
+                        Last name must be between 2 and 50 characters
+                    </div>
                 </div>
                 <div class="col-md-10">
                     <label class="form-label fw-bold">Comment</label>
-                    <textarea v-model="commentText" class="form-control" rows="3" required></textarea>
+                    <textarea 
+                        v-model="commentText" 
+                        class="form-control" 
+                        :class="{ 'is-invalid': touchedFields.comment && !isValidComment }"
+                        @blur="touchField('comment')"
+                        rows="3" 
+                        required
+                    ></textarea>
+                    <div class="invalid-feedback" v-if="touchedFields.comment && !isValidComment">
+                        Comment must be between 3 and 1000 characters
+                    </div>
                 </div>
                 <div class="col-md-5">
                     <label class="form-label fw-bold">Relationship</label>
-                    <select v-model="relationship" class="form-select">
+                    <select 
+                        v-model="selectedRelationshipType" 
+                        class="form-select"
+                        :class="{ 'is-invalid': touchedFields.relationshipType && !isValidRelationshipType }"
+                        @blur="touchField('relationshipType')"
+                        @change="loadCategories"
+                        required
+                    >
                         <option value="">Select Relationship</option>
-                        <option v-for="rel in relationships" :key="rel" :value="rel">
-                            {{ rel.charAt(0).toUpperCase() + rel.slice(1) }}
+                        <option v-for="type in relationshipTypes" :key="type.id" :value="type">
+                            {{ type.dropdown_label }}
                         </option>
                     </select>
+                    <div class="invalid-feedback" v-if="touchedFields.relationshipType && !isValidRelationshipType">
+                        Please select a relationship type
+                    </div>
                 </div>
-                <div class="col-md-5" v-if="relationship">
-                    <label class="form-label fw-bold">{{ relationshipQuestion }}</label>
-                    <!-- Family dropdown -->
-                    <select v-if="relationship === 'family'" v-model="relationshipDetail" class="form-select" required>
-                        <option value="">Select Family Type</option>
-                        <option v-for="type in familyTypes" :key="type" :value="type">
-                            {{ type.charAt(0).toUpperCase() + type.slice(1) }}
+                <div class="col-md-5" v-if="selectedRelationshipType">
+                    <label class="form-label fw-bold">Category</label>
+                    <select 
+                        v-model="selectedCategory" 
+                        class="form-select"
+                        :class="{ 'is-invalid': touchedFields.category && !isValidCategory }"
+                        @blur="touchField('category')"
+                        required
+                    >
+                        <option value="">Select Category</option>
+                        <option v-for="category in categories" :key="category.id" :value="category">
+                            {{ category.label }}
                         </option>
                     </select>
-                    <!-- Friend dropdown -->
-                    <select v-else-if="relationship === 'friend'" v-model="relationshipDetail" class="form-select" required>
-                        <option value="">Select When Met</option>
-                        <option v-for="category in friendCategories" :key="category" :value="category">
-                            {{ category.toUpperCase() }}
-                        </option>
-                    </select>
-                    <!-- Stranger dropdown -->
-                    <select v-else-if="relationship === 'stranger'" v-model="relationshipDetail" class="form-select" required>
-                        <option value="">Select Platform</option>
-                        <option v-for="platform in socialPlatforms" :key="platform" :value="platform">
-                            {{ platform.charAt(0).toUpperCase() + platform.slice(1) }}
-                        </option>
-                    </select>
+                    <div class="invalid-feedback" v-if="touchedFields.category && !isValidCategory">
+                        Please select a category
+                    </div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn w-100 bg-danger text-light">
@@ -68,9 +128,9 @@
                     </span>
                     <select v-model="sortBy" class="form-select" @change="sortComments">
                         <option value="all">All Comments</option>
-                        <option value="family">Family Only</option>
-                        <option value="friend">Friends Only</option>
-                        <option value="stranger">Strangers Only</option>
+                        <option v-for="type in relationshipTypes" :key="type.id" :value="type.id">
+                            {{ type.dropdown_label }} Only
+                        </option>
                     </select>
                 </div>
             </div>
@@ -83,14 +143,14 @@
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h6 class="fw-bold text-brown mb-1">
-                                {{ comment.firstName }} {{ comment.lastName }}
+                                {{ comment.user.firstname }} {{ comment.user.lastname }}
                             </h6>
                             <p class="mb-2">{{ comment.comment }}</p>
-                            <p class="text-muted small mb-0" v-if="comment.relationship">
+                            <p class="text-muted small mb-0">
                                 <i class="bi bi-person-badge"></i>
-                                <strong>Relationship:</strong> {{ comment.relationship }}
-                                <span v-if="getRelationshipDetail(comment)">
-                                    ({{ getRelationshipDetail(comment) }})
+                                <strong>Relationship:</strong> {{ comment.user.relationship_type.dropdown_label }}
+                                <span v-if="comment.category">
+                                    ({{ comment.category.label }})
                                 </span>
                             </p>
                         </div>
@@ -98,7 +158,7 @@
                             <button class="btn btn-warning btn-sm me-2" @click="editComment(comment)">
                                 <i class="bi bi-pencil"></i> Edit
                             </button>
-                            <button class="btn btn-danger btn-sm" @click="deleteComment(comment.id)">
+                            <button class="btn btn-danger btn-sm" @click="deleteComment(comment)">
                                 <i class="bi bi-trash"></i> Delete
                             </button>
                         </div>
@@ -121,98 +181,17 @@
                 </select>
             </div>
             <div class="d-flex align-items-center">
-                <span class="me-3">1-{{ Math.min(itemsPerPage, filteredComments.length) }} of {{ filteredComments.length }}</span>
+                <span class="me-3">{{ paginationText }}</span>
                 <button class="btn btn-link text-decoration-none px-2" 
                         :disabled="currentPage === 1"
                         @click="currentPage--">
-                    <
+                    <i class="bi bi-chevron-left"></i>
                 </button>
                 <button class="btn btn-link text-decoration-none px-2" 
                         :disabled="currentPage === totalPages"
                         @click="currentPage++">
-                    >
+                    <i class="bi bi-chevron-right"></i>
                 </button>
-            </div>
-        </div>
-
-        <!-- Edit Comment Modal -->
-        <div class="modal fade" id="editCommentModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Edit Comment</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form @submit.prevent="saveComment">
-                            <div class="mb-3">
-                                <label class="form-label">First Name</label>
-                                <input v-model="firstName" type="text" class="form-control" required />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Last Name</label>
-                                <input v-model="lastName" type="text" class="form-control" required />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Comment</label>
-                                <textarea v-model="commentText" class="form-control" required></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Relationship</label>
-                                <select v-model="relationship" class="form-select">
-                                    <option value="">Select Relationship</option>
-                                    <option v-for="rel in relationships" :key="rel" :value="rel">
-                                        {{ rel.charAt(0).toUpperCase() + rel.slice(1) }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="mb-3" v-if="relationship">
-                                <label class="form-label">{{ relationshipQuestion }}</label>
-                                <!-- Family dropdown -->
-                                <select v-if="relationship === 'family'" v-model="relationshipDetail" class="form-select" required>
-                                    <option value="">Select Family Type</option>
-                                    <option v-for="type in familyTypes" :key="type" :value="type">
-                                        {{ type.charAt(0).toUpperCase() + type.slice(1) }}
-                                    </option>
-                                </select>
-                                <!-- Friend dropdown -->
-                                <select v-else-if="relationship === 'friend'" v-model="relationshipDetail" class="form-select" required>
-                                    <option value="">Select When Met</option>
-                                    <option v-for="category in friendCategories" :key="category" :value="category">
-                                        {{ category.toUpperCase() }}
-                                    </option>
-                                </select>
-                                <!-- Stranger dropdown -->
-                                <select v-else-if="relationship === 'stranger'" v-model="relationshipDetail" class="form-select" required>
-                                    <option value="">Select Platform</option>
-                                    <option v-for="platform in socialPlatforms" :key="platform" :value="platform">
-                                        {{ platform.charAt(0).toUpperCase() + platform.slice(1) }}
-                                    </option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteCommentModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Confirm Delete</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Are you sure you want to delete this comment? This action cannot be undone.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-danger" @click="confirmDelete">Delete</button>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
@@ -220,8 +199,8 @@
 
 <script>
 import axios from "axios";
-import { Modal } from "bootstrap";
 import navComponent from "./navComponent.vue";
+import { commentAPI, relationshipAPI, categoryAPI } from '../services/api';
 
 export default {
     components: {
@@ -229,355 +208,376 @@ export default {
     },
     data() {
         return {
-            user_comments: [],
+            comments: [],
             firstName: "",
             lastName: "",
             commentText: "",
-            relationship: "",
-            relationshipDetail: "",
+            selectedRelationshipType: null,
+            selectedCategory: null,
+            relationshipTypes: [],
+            categories: [],
             isEditing: false,
             editId: null,
-            editModal: null,
-            error: "",
             currentPage: 1,
             itemsPerPage: 5,
             sortBy: "all",
-            maxDisplayedPages: 5,
-            relationships: [],
-            friendCategories: [],
-            familyTypes: [],
-            socialPlatforms: [],
-            deleteModal: null,
+            isLoading: false,
+            showDeleteModal: false,
             commentToDelete: null,
+            validationErrors: {},
+            showErrorAlert: false,
+            errorMessage: "",
+            touchedFields: {
+                firstName: false,
+                lastName: false,
+                relationshipType: false,
+                category: false,
+                comment: false
+            }
         };
     },
     computed: {
-        relationshipQuestion() {
-            switch (this.relationship) {
-                case 'friend':
-                    return 'Category:';
-                case 'family':
-                    return 'Relation Type:';
-                case 'stranger':
-                    return 'Found Alme on:';
-                default:
-                    return '';
-            }
-        },
         filteredComments() {
-            if (this.sortBy === 'all') {
-                return this.user_comments;
-            }
-            return this.user_comments.filter(comment => comment.relationship === this.sortBy);
-        },
-        totalPages() {
-            return Math.ceil(this.filteredComments.length / this.itemsPerPage);
+            if (this.sortBy === "all") return this.comments;
+            return this.comments.filter(comment => 
+                comment.user.relationship_type_id === this.sortBy
+            );
         },
         paginatedComments() {
             const start = (this.currentPage - 1) * this.itemsPerPage;
             const end = start + this.itemsPerPage;
             return this.filteredComments.slice(start, end);
         },
-        paginationInfo() {
+        totalPages() {
+            return Math.ceil(this.filteredComments.length / this.itemsPerPage);
+        },
+        paginationText() {
             const start = (this.currentPage - 1) * this.itemsPerPage + 1;
             const end = Math.min(start + this.itemsPerPage - 1, this.filteredComments.length);
-            return { start, end };
+            return `${start}-${end} of ${this.filteredComments.length}`;
         },
-        displayedPages() {
-            const total = this.totalPages;
-            const current = this.currentPage;
-            const max = this.maxDisplayedPages;
-            
-            if (total <= max) {
-                return Array.from({ length: total }, (_, i) => i + 1);
-            }
-            
-            let start = Math.max(1, current - Math.floor(max / 2));
-            let end = Math.min(total, start + max - 1);
-            
-            if (end - start + 1 < max) {
-                start = Math.max(1, end - max + 1);
-            }
-            
-            return Array.from(
-                { length: end - start + 1 },
-                (_, i) => start + i
-            );
+        isValidFirstName() {
+            return this.firstName.length >= 2 && this.firstName.length <= 50;
+        },
+        isValidLastName() {
+            return this.lastName.length >= 2 && this.lastName.length <= 50;
+        },
+        isValidComment() {
+            return this.commentText.length >= 3 && this.commentText.length <= 1000;
+        },
+        isValidRelationshipType() {
+            return this.selectedRelationshipType !== null;
+        },
+        isValidCategory() {
+            return this.selectedCategory !== null;
+        },
+        isFormValid() {
+            return this.isValidFirstName && 
+                   this.isValidLastName && 
+                   this.isValidComment && 
+                   this.isValidRelationshipType && 
+                   this.isValidCategory;
         }
     },
-    created() {
-        this.getComments();
-        this.fetchOptions();
-    },
-    mounted() {
-        const modalElement = document.getElementById("editCommentModal");
-        if (modalElement) {
-            this.editModal = new Modal(modalElement);
-        }
-        this.deleteModal = new Modal(document.getElementById('deleteCommentModal'));
+    async created() {
+        await this.loadRelationshipTypes();
+        await this.fetchComments();
     },
     methods: {
-        async fetchOptions() {
+        async loadRelationshipTypes() {
             try {
-                const response = await axios.get("http://localhost:5000/options");
-                const options = response.data;
-                this.relationships = options.relationships;
-                this.friendCategories = options.friendCategories;
-                this.familyTypes = options.familyTypes;
-                this.socialPlatforms = options.socialPlatforms;
-            } catch (err) {
-                console.error("Error fetching options:", err);
+                const response = await relationshipAPI.getAll();
+                this.relationshipTypes = response.data;
+            } catch (error) {
+                console.error('Error fetching relationship types:', error);
+                this.errorMessage = "Error loading relationship types. Please try again.";
+                this.showErrorAlert = true;
             }
         },
-        getRelationshipDetail(comment) {
-            if (!comment.relationship) return null;
-            
-            if (comment.friends && comment.friends.length > 0) {
-                return `Met in: ${comment.friends[0].metOn}`;
-            }
-            if (comment.family && comment.family.length > 0) {
-                return `Relationship type: ${comment.family[0].relationshipType}`;
-            }
-            if (comment.strangers && comment.strangers.length > 0) {
-                return `Found on: ${comment.strangers[0].foundOn}`;
-            }
-            return null;
-        },
-        async getComments() {
+        async fetchComments() {
             try {
-                const response = await axios.get("http://localhost:5000/user_comment");
-                // Sort comments by newest first (assuming there's a timestamp field)
-                this.user_comments = response.data.sort((a, b) => {
-                    return new Date(b.createdAt || b.updatedAt) - new Date(a.createdAt || a.updatedAt);
-                });
-            } catch (err) {
-                console.error("Error fetching comments:", err);
-                this.error = err.response?.data?.message || 
-                            err.response?.data?.error || 
-                            "Failed to fetch comments. Please try again later.";
-                this.user_comments = [];
+                this.isLoading = true;
+                const response = await commentAPI.getAll();
+                this.comments = response.data;
+            } catch (error) {
+                console.error('Error fetching comments:', error);
+                this.errorMessage = "Error loading comments. Please try again.";
+                this.showErrorAlert = true;
+            } finally {
+                this.isLoading = false;
+            }
+        },
+        async loadCategories() {
+            if (!this.selectedRelationshipType) {
+                this.categories = [];
+                this.selectedCategory = null;
+                return;
+            }
+
+            try {
+                this.isLoading = true;
+                const response = await categoryAPI.getByRelationship(this.selectedRelationshipType.id);
+                this.categories = response.data;
+                this.selectedCategory = null;
+            } catch (error) {
+                console.error('Error fetching categories:', error.response || error);
+                this.errorMessage = "Error loading categories. Please try again.";
+                this.showErrorAlert = true;
+                this.categories = [];
+            } finally {
+                this.isLoading = false;
             }
         },
         async saveComment() {
+            // Mark all fields as touched when submitting
+            Object.keys(this.touchedFields).forEach(field => {
+                this.touchedFields[field] = true;
+            });
+
+            // Check if form is valid before submitting
+            if (!this.isFormValid) {
+                this.showErrorAlert = true;
+                this.errorMessage = "Please fix the validation errors before submitting.";
+                return;
+            }
+
             try {
+                this.isLoading = true;
+                this.validationErrors = {};
+                this.showErrorAlert = false;
+
                 const commentData = {
-                    firstName: this.firstName,
-                    lastName: this.lastName,
-                    comment: this.commentText,
-                    relationship: this.relationship,
-                    relationshipDetail: this.relationshipDetail
+                    firstname: this.firstName,
+                    lastname: this.lastName,
+                    relationship_type_id: this.selectedRelationshipType?.id,
+                    category_id: this.selectedCategory?.id,
+                    comment: this.commentText
                 };
 
                 if (this.isEditing) {
-                    await axios.put(`http://localhost:5000/user_comment/${this.editId}`, commentData);
+                    await commentAPI.update(this.editId, commentData);
                 } else {
-                    await axios.post("http://localhost:5000/user_comment", commentData);
+                    await commentAPI.create(commentData);
                 }
-                this.cancelEdit();
-                this.getComments();
-                if (this.editModal) this.editModal.hide();
-            } catch (err) {
-                console.error("Error saving comment:", err);
+
+                await this.fetchComments();
+                this.resetForm();
+            } catch (error) {
+                if (error.response?.data?.errors) {
+                    const errors = {};
+                    error.response.data.errors.forEach(err => {
+                        errors[err.path] = err.msg;
+                    });
+                    this.validationErrors = errors;
+                    this.errorMessage = "Please fix the validation errors.";
+                    this.showErrorAlert = true;
+                } else {
+                    this.errorMessage = "An error occurred while saving the comment.";
+                    this.showErrorAlert = true;
+                }
+                console.error('Error saving comment:', error);
+            } finally {
+                this.isLoading = false;
             }
+        },
+        deleteComment(comment) {
+            this.commentToDelete = comment;
+            this.showDeleteModal = true;
         },
         editComment(comment) {
-            this.firstName = comment.firstName;
-            this.lastName = comment.lastName;
+            this.firstName = comment.user.firstname;
+            this.lastName = comment.user.lastname;
             this.commentText = comment.comment;
-            this.relationship = comment.relationship;
-            
-            // Set relationshipDetail based on the relationship type
-            if (comment.friends && comment.friends.length > 0) {
-                this.relationshipDetail = comment.friends[0].metOn;
-            } else if (comment.family && comment.family.length > 0) {
-                this.relationshipDetail = comment.family[0].relationshipType;
-            } else if (comment.strangers && comment.strangers.length > 0) {
-                this.relationshipDetail = comment.strangers[0].foundOn;
-            } else {
-                this.relationshipDetail = '';
-            }
-            
-            this.editId = comment.id;
+            this.selectedRelationshipType = comment.user.relationship_type;
+            this.loadCategories().then(() => {
+                this.selectedCategory = comment.category;
+            });
             this.isEditing = true;
-            if (this.editModal) this.editModal.show();
+            this.editId = comment.id;
         },
-        cancelEdit() {
+        resetForm() {
             this.firstName = "";
             this.lastName = "";
             this.commentText = "";
-            this.relationship = "";
-            this.relationshipDetail = "";
+            this.selectedRelationshipType = null;
+            this.selectedCategory = null;
             this.isEditing = false;
             this.editId = null;
-        },
-        deleteComment(id) {
-            this.commentToDelete = id;
-            this.deleteModal.show();
-        },
-        async confirmDelete() {
-            try {
-                await axios.delete(`http://localhost:5000/user_comment/${this.commentToDelete}`);
-                this.user_comments = this.user_comments.filter(comment => comment.id !== this.commentToDelete);
-                this.deleteModal.hide();
-                this.commentToDelete = null;
-            } catch (error) {
-                console.error('Error deleting comment:', error);
-                this.error = 'Failed to delete comment';
-            }
+            this.categories = [];
+            this.validationErrors = {};
+            this.showErrorAlert = false;
+            this.touchedFields = {
+                firstName: false,
+                lastName: false,
+                relationshipType: false,
+                category: false,
+                comment: false
+            };
         },
         sortComments() {
-            this.currentPage = 1; // Reset to first page when sorting changes
+            this.currentPage = 1;
         },
-    },
+        async confirmDelete() {
+            if (!this.commentToDelete) return;
+
+            try {
+                this.isLoading = true;
+                await commentAPI.delete(this.commentToDelete.id);
+                await this.fetchComments();
+            } catch (error) {
+                console.error('Error deleting comment:', error);
+                this.errorMessage = "Error deleting comment. Please try again.";
+                this.showErrorAlert = true;
+            } finally {
+                this.isLoading = false;
+                this.showDeleteModal = false;
+                this.commentToDelete = null;
+            }
+        },
+        cancelDelete() {
+            this.showDeleteModal = false;
+            this.commentToDelete = null;
+        },
+        touchField(fieldName) {
+            this.touchedFields[fieldName] = true;
+        }
+    }
 };
 </script>
 
 <style scoped>
-.text-brown {
-    color: #8b4513;
-}
-
 .sticky-form {
     position: sticky;
-    top: 20px;
+    top: 0;
     z-index: 1000;
-    border-radius: 8px;
-    transition: box-shadow 0.3s ease;
-}
-
-.sticky-form:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-}
-
-.comments-container {
-    max-height: 600px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #dc3545 #f8f9fa;
-}
-
-.comments-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.comments-container::-webkit-scrollbar-track {
-    background: #f8f9fa;
-    border-radius: 4px;
-}
-
-.comments-container::-webkit-scrollbar-thumb {
-    background-color: #dc3545;
-    border-radius: 4px;
+    background-color: white;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #dee2e6;
 }
 
 .comment-item {
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: background-color 0.2s;
 }
 
 .comment-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    background-color: #f8f9fa;
 }
 
 .comment-actions {
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
+    opacity: 0;
+    transition: opacity 0.2s;
 }
 
 .comment-item:hover .comment-actions {
     opacity: 1;
 }
 
-/* Pagination styles */
-.btn-link {
-    color: #000;
-    font-size: 1.2rem;
-    padding: 0.25rem 0.5rem;
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
 }
 
-.btn-link:hover:not(:disabled) {
-    color: #000;
-    background-color: #f0f0f0;
+.loading-spinner {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
 }
 
-.btn-link:disabled {
-    color: #ccc;
-    opacity: 1;
+.spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
-.form-select-sm {
-    padding: 0.25rem 1.5rem 0.25rem 0.5rem;
-    font-size: 0.875rem;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
     border-radius: 4px;
-    border-color: #ced4da;
-}
-
-.form-select-sm:focus {
-    border-color: #ced4da;
-    box-shadow: none;
-}
-
-.input-group-text {
+    cursor: pointer;
     border: none;
-    background-color: #f8f9fa;
-}
-
-.form-select {
-    border-radius: 4px;
-}
-
-.form-select:focus {
-    border-color: #ced4da;
-}
-
-.btn-outline-secondary {
-    border-color: #ced4da;
-}
-
-.btn-outline-secondary:hover:not(:disabled) {
-    background-color: #f8f9fa;
-    border-color: #ced4da;
-    color: #212529;
-}
-
-.btn-outline-secondary:disabled {
-    opacity: 0.4;
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
-}
-
-.btn {
-    transition: all 0.2s ease;
-}
-
-.btn:hover {
-    transform: translateY(-1px);
-}
-
-.btn-warning {
-    background-color: #ffc107;
-    border-color: #ffc107;
-    color: #000;
-}
-
-.btn-warning:hover {
-    background-color: #ffca2c;
-    border-color: #ffc720;
-    color: #000;
 }
 
 .btn-danger {
     background-color: #dc3545;
-    border-color: #dc3545;
+    color: white;
 }
 
-.btn-danger:hover {
-    background-color: #bb2d3b;
-    border-color: #b02a37;
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: #dc3545;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-select.is-invalid {
+    padding-right: 4.125rem;
+    background-position: right 0.75rem center, center right 2.25rem;
+    background-size: 16px 12px, calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
 }
 </style>

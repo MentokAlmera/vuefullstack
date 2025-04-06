@@ -1,111 +1,63 @@
-import { Model, DataTypes } from 'sequelize';
+'use strict';
+import { Model } from 'sequelize';
 
-export default (sequelize) => {
+export default (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      User.hasMany(models.Friend, {
-        foreignKey: 'userId',
-        as: 'friends'
+      this.belongsTo(models.RelationshipType, {
+        foreignKey: 'relationship_type_id',
+        as: 'relationship_type'
       });
-      User.hasMany(models.family, {
-        foreignKey: 'userId',
-        as: 'family'
-      });
-      User.hasMany(models.Stranger, {
-        foreignKey: 'userId',
-        as: 'strangers'
+      this.hasMany(models.Comment, {
+        foreignKey: 'user_id',
+        as: 'comments'
       });
     }
   }
+  
   User.init({
-    firstName: DataTypes.STRING,
-    lastName: DataTypes.STRING,
-    comment: DataTypes.TEXT,
-    relationship: {
-      type: DataTypes.ENUM('friend', 'family', 'stranger'),
-      allowNull: true
+    firstname: {
+      type: DataTypes.STRING,
+      allowNull: false
     },
-    relationshipDetail: {
-      type: DataTypes.VIRTUAL,
-      get() {
-        return this.getDataValue('relationshipDetail');
-      },
-      set(value) {
-        this.setDataValue('relationshipDetail', value);
+    lastname: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    relationship_type_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'relationship_types',
+        key: 'id'
       }
     },
-    deleted_at: DataTypes.DATE,
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: sequelize.fn('NOW')
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: sequelize.fn('NOW')
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
+    }
   }, {
     sequelize,
     modelName: 'User',
-    hooks: {
-      afterCreate: async (user, options) => {
-        if (user.relationship) {
-          const { relationship, relationshipDetail, id } = user;
-          
-          switch (relationship) {
-            case 'friend':
-              await sequelize.models.Friend.create({
-                userId: id,
-                relationship: 'friend',
-                metOn: relationshipDetail || null
-              }, { transaction: options.transaction });
-              break;
-            case 'family':
-              await sequelize.models.family.create({
-                userId: id,
-                relationship: 'family',
-                relationshipType: relationshipDetail || null
-              }, { transaction: options.transaction });
-              break;
-            case 'stranger':
-              await sequelize.models.Stranger.create({
-                userId: id,
-                relationship: 'stranger',
-                foundOn: relationshipDetail || null
-              }, { transaction: options.transaction });
-              break;
-          }
-        }
-      },
-      afterUpdate: async (user, options) => {
-        if (user.relationship) {
-          const { relationship, relationshipDetail, id } = user;
-          
-          // Delete any existing relationship entries
-          await Promise.all([
-            sequelize.models.Friend.destroy({ where: { userId: id } }, { transaction: options.transaction }),
-            sequelize.models.family.destroy({ where: { userId: id } }, { transaction: options.transaction }),
-            sequelize.models.Stranger.destroy({ where: { userId: id } }, { transaction: options.transaction })
-          ]);
-
-          // Create new relationship entry
-          switch (relationship) {
-            case 'friend':
-              await sequelize.models.Friend.create({
-                userId: id,
-                relationship: 'friend',
-                metOn: relationshipDetail || null
-              }, { transaction: options.transaction });
-              break;
-            case 'family':
-              await sequelize.models.family.create({
-                userId: id,
-                relationship: 'family',
-                relationshipType: relationshipDetail || null
-              }, { transaction: options.transaction });
-              break;
-            case 'stranger':
-              await sequelize.models.Stranger.create({
-                userId: id,
-                relationship: 'stranger',
-                foundOn: relationshipDetail || null
-              }, { transaction: options.transaction });
-              break;
-          }
-        }
-      }
-    }
+    tableName: 'users',
+    underscored: true,
+    paranoid: true,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    deletedAt: 'deleted_at'
   });
+  
   return User;
-};
+}; 
