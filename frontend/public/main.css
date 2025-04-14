@@ -44,6 +44,21 @@ a {
   min-height: 90vh;
 }
 
+.btn-brown {
+  background-color: #4A3728;
+  color: white;
+  border: none;
+  padding: 10px 30px;
+  font-weight: 500;
+  text-transform: uppercase;
+  border-radius: 20px;
+}
+
+.btn-brown:hover {
+  background-color: #5c4534;
+  color: white;
+}
+
 @media (max-width: 1400px) {
   .main {
     margin: 0;

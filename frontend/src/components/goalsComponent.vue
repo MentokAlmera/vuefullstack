@@ -1,7 +1,7 @@
 <template>
     <navComponent />
     <div class="container bg-white p-4 rounded shadow-lg text-center mt-5">
-        <h1 class="text-center text-danger">Goals</h1>
+        <h1 class="name">Goals</h1>
 
         <section class="d-flex justify-content-center align-items-center my-4">
             <div class="container">

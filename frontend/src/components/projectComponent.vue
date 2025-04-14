@@ -4,14 +4,14 @@
       <h1 class="name my-4">Projects</h1>
       <section>
         <div class="container">
-          <!-- Loop through regular projects -->
+         
           <div
             v-for="(project, index) in regularProjects"
             :key="index"
-            class="row align-items-center mb-5 py-4"
+            class="row align-items-center mb-5 py-4 p-4"
             :class="project.title === 'Orgbee' || index % 2 === 0 ? 'alt-bg text-white' : ''"
           >
-            <!-- YouTube video -->
+          
             <div class="col-md-6" :class="index % 2 === 0 ? 'order-md-1' : 'order-md-2'">
               <iframe
                 class="w-100 ratio ratio-16x9"
@@ -22,25 +22,24 @@
               ></iframe>
             </div>
   
-            <!-- Logo, title, description -->
+           
             <div class="col-md-6 text-center d-flex flex-column align-items-center"
                  :class="index % 2 === 0 ? 'order-md-2' : 'order-md-1'">
               <img :src="project.image" class="img-fluid mb-3" style="max-width: 1000px;" :alt="project.title" />
               <h3 class="text-warning">{{ project.title }}</h3>
-              <h6 class="text-body-secondary" :class="index % 2 === 1 ? 'text-light' : ''">{{ project.role }}</h6>
-              <p  class="p-4">{{ project.description }}</p>
+              <h6 class="text-body-secondary fs-4" :class="index % 2 === 1 ? 'text-light' : ''">{{ project.role }}</h6>
+              <p  class="p-4 fs-5">{{ project.description }}</p>
             </div>
           </div>
   
-          <!-- HypeHive last, default white background -->
           <div class="row align-items-center mb-5 py-4">
             <div class="col-md-6 text-center">
               <img :src="hypehive.image" class="img-fluid w-75" alt="HypeHive Logo" />
             </div>
             <div class="col-md-6 text-center ">
               <h3 class="text-warning">{{ hypehive.title }}</h3>
-              <h6 class="text-body-secondary">{{ hypehive.role }}</h6>
-              <p class="p-4">{{ hypehive.description }}</p>
+              <h6 class="text-body-secondary fs-4">{{ hypehive.role }}</h6>
+              <p class="p-4 fs-5">{{ hypehive.description }}</p>
             </div>
           </div>
         </div>
@@ -121,6 +120,14 @@
   }
   .alt-bg {
     background-color: #4d392a;
+  }
+
+  .container {
+    margin: 0;
+    width: 100%;
+    max-width: 5000px;
+    align-items: center;
+    justify-content: center;
   }
   </style>
   

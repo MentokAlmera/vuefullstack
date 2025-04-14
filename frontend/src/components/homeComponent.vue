@@ -37,6 +37,10 @@ const goToComments = () => {
   router.push('/comment');
 };
 
+const goToGallery = () => {
+  router.push('/gallery');
+};
+
 
 const startTour = () => {
   if (typeof Shepherd === "undefined") {
@@ -294,7 +298,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 4rem;
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -305,7 +309,7 @@ onMounted(() => {
 
 .profile-image {
   width: 100%;
-  max-width: 400px;
+  max-width: 600px;
   height: auto;
 }
 
@@ -314,10 +318,11 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  text-align: center;
 }
 
 .name {
-  font-size: 3.5rem;
+  font-size: 5.0rem;
   font-weight: bold;
   color: #4A3728;
   margin: 0;
@@ -343,6 +348,7 @@ onMounted(() => {
   padding: 10px 30px;
   font-weight: 500;
   text-transform: uppercase;
+  border-radius: 20px;
 }
 
 .btn-brown:hover {

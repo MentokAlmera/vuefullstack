@@ -4,6 +4,7 @@ import interestHobComponent from '@/components/interestHobComponent.vue';
 import goalsComponent from '@/components/goalsComponent.vue';
 import projectComponent from '@/components/projectComponent.vue';
 import commentComponent from '@/components/commentComponent.vue';
+import galleryComponent from '@/components/galleryComponent.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: '/project', component: projectComponent },
     { path: '/interesthob', component: interestHobComponent },
     { path: '/comment', component: commentComponent },
+    { path: '/gallery', component: galleryComponent},
   ]
 });
 

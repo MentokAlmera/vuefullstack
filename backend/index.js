@@ -51,6 +51,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, '192.168.56.1', () => {
-    console.log(`Server running at http://192.168.56.1:${PORT}`);
+app.listen(PORT, '192.168.10.26', () => {
+    console.log(`Server running at http://192.168.10.26:${PORT}`);
 });

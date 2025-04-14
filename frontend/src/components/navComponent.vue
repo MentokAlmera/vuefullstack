@@ -15,11 +15,11 @@
           <li class="nav-item" id="panel-1">
             <RouterLink class="nav-link text-light" to="/">Home</RouterLink>
           </li>
-          <li class="nav-item" id="panel-2">
-            <RouterLink class="nav-link text-light" to="/interesthob">Interests & Hobbies</RouterLink>
-          </li>
           <li class="nav-item" id="panel-3">
             <RouterLink class="nav-link text-light" to="/project">Projects</RouterLink>
+          </li>
+          <li class="nav-item" id="panel-2">
+            <RouterLink class="nav-link text-light" to="/interesthob">Interests & Hobbies</RouterLink>
           </li>
           <li class="nav-item" id="panel-4">
             <RouterLink class="nav-link text-light" to="/goals">Goals</RouterLink>
