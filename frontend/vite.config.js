@@ -11,14 +11,19 @@ export default defineConfig({
     }
   },
   server: {
-    host: '192.168.10.26',
+    host: true,
     port: 8080,
     proxy: {
       '/api': {
-        target: 'http://192.168.10.26:3000',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
-      }
+      },
+      // '/user_comment': {
+      //   target: 'http://localhost:5000',
+      //   changeOrigin: true,
+      //   secure: false
+      // }
     }
   },
   optimizeDeps: {
