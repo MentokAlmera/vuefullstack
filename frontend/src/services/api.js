@@ -10,7 +10,6 @@ const api = axios.create({
     }
 });
 
-// Add response interceptor for debugging
 api.interceptors.response.use(
     response => response,
     error => {

@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -11,22 +10,10 @@ export default defineConfig({
     }
   },
   server: {
-    host: true,
     port: 8080,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
-      },
-      // '/user_comment': {
-      //   target: 'http://localhost:5000',
-      //   changeOrigin: true,
-      //   secure: false
-      // }
-    }
+    host: '192.168.10.26.8080'
   },
-  optimizeDeps: {
-    include: ['axios']
-  }
+  // optimizeDeps: {
+  //   include: ['axios']
+  // }
 }); 

@@ -21,7 +21,7 @@
 
     <navComponent />
     <main class="container bg-white p-4 rounded shadow-lg mt-5">
-        <h1 class="text-center text-danger mt-3 mb-4">Comments</h1>
+        <h1 class="name text-center mt-3 mb-4">Comments</h1>
 
         <!-- Add this after the navComponent -->
         <div v-if="showErrorAlert" class="alert alert-danger alert-dismissible fade show mx-4 mt-4" role="alert">
